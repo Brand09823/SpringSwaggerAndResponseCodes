@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,42 +36,51 @@ productoRepo repoProducto;
     return repo.save(categoria);
   }
   @PostMapping("addProductoCategoria/{productId}/{categoriaId}")
-  public Department addcategoria(@PathVariable String productId ,@PathVariable String categoriaId) {
-    Optional<Producto> p = repoProducto.findById(productId);
-    Optional<Department> d = repo.findById(categoriaId);
-    if(d.isPresent())
-    if(p.isPresent()){
-        
-        d.get().getProductos().add(p.get());
+  public ResponseEntity<Department> addcategoria(@PathVariable String productId ,@PathVariable String categoriaId) {
+    Optional<Producto> product = repoProducto.findById(productId);
+    Optional<Department> category = repo.findById(categoriaId);
+    if (product.isEmpty() || category.isEmpty()) {
+      return ResponseEntity.notFound().build();
     }
-    return repo.save(d.get());
+    category.get().getProductos().add(product.get());
+    return ResponseEntity.ok(repo.save(category.get()));
 
   }
   @GetMapping("categoria/producto/{productId}")
-  public Set<Department>  getDepartmentsByProduct(@PathVariable String productId) {
-    Optional<Producto> p = repoProducto.findById(productId);
-    if(p.isPresent()){
-      return  p.get().getDeparments();
+  public ResponseEntity<Set<Department>> getDepartmentsByProduct(@PathVariable String productId) {
+    Optional<Producto> product = repoProducto.findById(productId);
+    if(product.isPresent()){
+      return ResponseEntity.ok(product.get().getDeparments());
     }
-    return null;
+    return ResponseEntity.notFound().build();
 
   }
 
 @GetMapping("categoria/{id}")
-public Optional<Department> getById(@PathVariable String id) {
-    return repo.findById(id);
+public ResponseEntity<Department> getById(@PathVariable String id) {
+    Optional<Department> result = repo.findById(id);
+    if (result.isPresent()) {
+      return ResponseEntity.ok(result.get());
+    }
+    return ResponseEntity.notFound().build();
 }
 
 
 @PutMapping("categoria/{id}")
-public Department putDepartment(@PathVariable String id, @RequestBody Department categoria) {
+public ResponseEntity<Department> putDepartment(@PathVariable String id, @RequestBody Department categoria) {
+    if (!repo.existsById(id)) {
+      return ResponseEntity.notFound().build();
+    }
     categoria.setId(id);
-    return repo.save(categoria);
+    return ResponseEntity.ok(repo.save(categoria));
 }
 
 @DeleteMapping("categoria/{id}")
-public String deleteDeparment(@PathVariable String id) {
+public ResponseEntity<Void> deleteDeparment(@PathVariable String id) {
+    if (!repo.existsById(id)) {
+      return ResponseEntity.notFound().build();
+    }
     repo.deleteById(id);
-    return "{\"success\":true}";
+    return ResponseEntity.noContent().build();
 }
 }

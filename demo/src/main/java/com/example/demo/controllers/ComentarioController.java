@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,41 +36,51 @@ productoRepo repoProducto;
     return repo.save(comentario);
   }
   @PostMapping("comentario/{productId}")
-  public Comment addcomentario(@RequestBody Comment comentario,@PathVariable String productId) {
-    Optional<Producto> p = repoProducto.findById(productId);
-    if(p.isPresent()){
-      System.out.println(p.get().getNombre());
-      comentario.setProducto(p.get());
+  public ResponseEntity<Comment> addcomentario(@RequestBody Comment comentario,@PathVariable String productId) {
+    Optional<Producto> product = repoProducto.findById(productId);
+    if (product.isEmpty()) {
+      return ResponseEntity.notFound().build();
     }
-    return repo.save(comentario);
+    comentario.setProducto(product.get());
+    return ResponseEntity.ok(repo.save(comentario));
 
   }
   @GetMapping("comentarios/{productId}")
-  public Set<Comment>  getCommentsByProduct(@PathVariable String productId) {
-    Optional<Producto> p = repoProducto.findById(productId);
-    if(p.isPresent()){
-      return  p.get().getComentarios();
+  public ResponseEntity<Set<Comment>> getCommentsByProduct(@PathVariable String productId) {
+    Optional<Producto> product = repoProducto.findById(productId);
+    if(product.isPresent()){
+      return ResponseEntity.ok(product.get().getComentarios());
     }
-    return null;
+    return ResponseEntity.notFound().build();
 
   }
 
 @GetMapping("comentario/{id}")
-public Optional<Comment> getById(@PathVariable String id) {
-    return repo.findById(id);
+public ResponseEntity<Comment> getById(@PathVariable String id) {
+    Optional<Comment> result = repo.findById(id);
+    if (result.isPresent()) {
+      return ResponseEntity.ok(result.get());
+    }
+    return ResponseEntity.notFound().build();
 }
 
 
 @PutMapping("comentario/{id}")
-public Comment putusuari(@PathVariable String id, @RequestBody Comment comentario) {
+public ResponseEntity<Comment> putusuari(@PathVariable String id, @RequestBody Comment comentario) {
+    if (!repo.existsById(id)) {
+      return ResponseEntity.notFound().build();
+    }
     comentario.setId(id);
-    return repo.save(comentario);
+    return ResponseEntity.ok(repo.save(comentario));
 }
 
 @DeleteMapping("comentario/{id}")
-public String deleteMailbox(@PathVariable String id) {
+public ResponseEntity<Void> deleteMailbox(@PathVariable String id) {
+    if (!repo.existsById(id)) {
+      return ResponseEntity.notFound().build();
+    }
     repo.deleteById(id);
-    return "{\"success\":true}";
+    return ResponseEntity.noContent().build();
 }
 }
 

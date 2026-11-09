@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,41 +37,51 @@ productoRepo repoProducto;
     return repo.save(imagen);
   }
   @PostMapping("imagen/{productId}")
-  public Image addimagen(@RequestBody Image imagen,@PathVariable String productId) {
-    Optional<Producto> p = repoProducto.findById(productId);
-    if(p.isPresent()){
-      //System.out.println(p.get().getNombre());
-      imagen.setProducto(p.get());
+  public ResponseEntity<Image> addimagen(@RequestBody Image imagen,@PathVariable String productId) {
+    Optional<Producto> product = repoProducto.findById(productId);
+    if (product.isEmpty()) {
+      return ResponseEntity.notFound().build();
     }
-    return repo.save(imagen);
+    imagen.setProducto(product.get());
+    return ResponseEntity.ok(repo.save(imagen));
 
   }
-  @GetMapping("imagen/{productId}")
-  public Set<Image>  getImagensByProduct(@PathVariable String productId) {
-    Optional<Producto> p = repoProducto.findById(productId);
-    if(p.isPresent()){
-      return  p.get().getImagenes();
+  @GetMapping("imagenes/producto/{productId}")
+  public ResponseEntity<Set<Image>> getImagensByProduct(@PathVariable String productId) {
+    Optional<Producto> product = repoProducto.findById(productId);
+    if(product.isPresent()){
+      return ResponseEntity.ok(product.get().getImagenes());
     }
-    return null;
+    return ResponseEntity.notFound().build();
 
   }
 
 @GetMapping("imagen/{id}")
-public Optional<Image> getById(@PathVariable String id) {
-    return repo.findById(id);
+public ResponseEntity<Image> getById(@PathVariable String id) {
+    Optional<Image> result = repo.findById(id);
+    if (result.isPresent()) {
+      return ResponseEntity.ok(result.get());
+    }
+    return ResponseEntity.notFound().build();
 }
 
 
 @PutMapping("imagen/{id}")
-public Image putusuari(@PathVariable String id, @RequestBody Image imagen) {
+public ResponseEntity<Image> putusuari(@PathVariable String id, @RequestBody Image imagen) {
+    if (!repo.existsById(id)) {
+      return ResponseEntity.notFound().build();
+    }
     imagen.setId(id);
-    return repo.save(imagen);
+    return ResponseEntity.ok(repo.save(imagen));
 }
 
 @DeleteMapping("imagen/{id}")
-public String deleteMailbox(@PathVariable String id) {
+public ResponseEntity<Void> deleteMailbox(@PathVariable String id) {
+    if (!repo.existsById(id)) {
+      return ResponseEntity.notFound().build();
+    }
     repo.deleteById(id);
-    return "{\"success\":true}";
+    return ResponseEntity.noContent().build();
 }
 }
 
